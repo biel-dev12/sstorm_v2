@@ -12,7 +12,7 @@ export async function POST(request: Request) {
   n8nData.append("file", file);
 
   try {
-    const res = await fetch("https://aa7teoscnhgoiuvtadkpmdth.hooks.n8n.cloud/webhook-test/ltcat", {
+    const res = await fetch("https://forced-leftwardly-mary.ngrok-free.dev/webhook-test/ltcat", {
       method: "POST",
       body: n8nData,
     });
