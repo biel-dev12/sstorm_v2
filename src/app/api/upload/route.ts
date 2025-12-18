@@ -1,44 +1,71 @@
 import { NextResponse } from "next/server";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+export async function GET() {
+  return NextResponse.json({ status: "upload route OK" });
+}
+
 export async function POST(request: Request) {
   const formData = await request.formData();
+
   const file = formData.get("file") as File;
+  const anoEmissao = formData.get("anoEmissao") as string;
 
   if (!file) {
-    return NextResponse.json({ error: "Nenhum arquivo enviado." }, { status: 400 });
+    return NextResponse.json(
+      { error: "Nenhum arquivo enviado." },
+      { status: 400 }
+    );
   }
 
+  if (!anoEmissao) {
+    return NextResponse.json(
+      { error: "Ano/Emissão não informado." },
+      { status: 400 }
+    );
+  }
+
+  // 🔹 Prepara dados para o n8n
   const n8nData = new FormData();
   n8nData.append("file", file);
+  n8nData.append("anoEmissao", anoEmissao);
 
   try {
-    // 🔹 Envia o PDF para o n8n (que faz o processamento e gera o DOCX)
-    const res = await fetch("https://forced-leftwardly-mary.ngrok-free.dev/webhook-test/ltcat", {
-      method: "POST",
-      body: n8nData,
-    });
+    const res = await fetch(
+      "https://aut-doctors-n8n.cgalnz.easypanel.host/webhook-test/recebe-arquivo",
+      {
+        method: "POST",
+        body: n8nData,
+      }
+    );
 
-    // 🔹 Verifica se o n8n respondeu corretamente
     if (!res.ok) {
       const errText = await res.text();
       console.error("❌ Erro do n8n:", errText);
-      return NextResponse.json({ error: errText }, { status: res.status });
+      return NextResponse.json(
+        { error: errText },
+        { status: res.status }
+      );
     }
 
-    // 🔹 Tenta identificar o tipo da resposta
     const contentType = res.headers.get("content-type") || "";
 
-    if (contentType.includes("application/json")) {
-      // Caso o n8n mande um JSON com o arquivo em base64
-      const result = await res.json();
-      const fileData = result.dados?.data;
-      const fileName =
-        result.dados?.fileName || "LTCAT.docx";
-      const mimeType =
-        result.dados?.mimeType ||
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+    // 🔹 Normaliza nome do arquivo
+    const safeAno = anoEmissao.replace("/", "-");
+    const fileName = `LTCAT_${safeAno}.pdf`;
 
-      if (!fileData) throw new Error("Campo 'dados.data' ausente no JSON.");
+    // 🔹 Caso o n8n retorne JSON com base64
+    if (contentType.includes("application/json")) {
+      const result = await res.json();
+
+      const fileData = result.dados?.data;
+      const mimeType = result.dados?.mimeType || "application/pdf";
+
+      if (!fileData) {
+        throw new Error("Campo 'dados.data' ausente no JSON.");
+      }
 
       const buffer = Buffer.from(fileData, "base64");
 
@@ -48,19 +75,24 @@ export async function POST(request: Request) {
           "Content-Disposition": `attachment; filename="${fileName}"`,
         },
       });
-    } else {
-      // 🔹 Caso o n8n já retorne o DOCX binário diretamente
-      const buffer = await res.arrayBuffer();
-      return new Response(buffer, {
-        headers: {
-          "Content-Type":
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-          "Content-Disposition": "attachment; filename=LTCAT.docx",
-        },
-      });
     }
+
+    // 🔹 Caso o n8n já retorne o PDF binário
+    const buffer = await res.arrayBuffer();
+
+    return new Response(buffer, {
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="${fileName}"`,
+        "Content-Length": buffer.byteLength.toString(),
+      },
+    });
+
   } catch (err: any) {
     console.error("🚨 Erro no upload route:", err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json(
+      { error: err.message || "Erro interno no servidor." },
+      { status: 500 }
+    );
   }
 }

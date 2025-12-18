@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 export async function POST(req: Request) {
   const json = await req.json();
 
-  const response = await fetch("https://forced-leftwardly-mary.ngrok-free.dev/webhook-test/ltcat", {
+  const response = await fetch("https://n8n.doctorspraiagrande.com.br/webhook-test/recebe-arquivo", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(json),

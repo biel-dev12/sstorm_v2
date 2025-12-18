@@ -58,8 +58,8 @@ const data = {
       isActive: true,
       items: [
         {
-          title: "Gerar LTCAT",
-          url: "/ltcat",
+          title: "Gerar Relatório Psicossocial",
+          url: "/relatorio_psicossocial",
         },
       ],
     },
