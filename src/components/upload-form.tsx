@@ -1,140 +1,127 @@
 "use client";
 
 import { useState } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
+import { toast } from "sonner";
+import { FileDown, FileUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { Loader2, CheckCircle2, XCircle } from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Label } from "@/components/ui/label";
+
+const formSchema = z.object({
+  texto: z.string().min(2, "O texto é obrigatório."),
+  arquivo: z.any().refine((files) => files?.length === 1, "Selecione um arquivo Excel."),
+});
 
 export function UploadForm() {
-  const [file, setFile] = useState<File | null>(null);
-  const [anoEmissao, setAnoEmissao] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
-  const [alert, setAlert] = useState<{
-    type: "success" | "error";
-    message: string;
-  } | null>(null);
+  const [downloadData, setDownloadData] = useState<{ url: string, filename: string } | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!file || !anoEmissao) return;
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: { texto: "" },
+  });
 
-    setLoading(true);
-    setProgress(20);
-    setAlert(null);
-    setDownloadUrl(null);
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    setDownloadData(null);
+    setIsProcessing(true);
 
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("anoEmissao", anoEmissao);
+    const promise = async () => {
+      const formData = new FormData();
+      formData.append("texto", values.texto);
+      formData.append("data", values.arquivo[0]);
 
-    try {
-      const res = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
+      const response = await fetch("/api/upload-pdf", { method: "POST", body: formData });
 
-      if (!res.ok) throw new Error("Erro ao processar o arquivo");
+      if (!response.ok) throw new Error("Erro");
 
-      const blob = await res.blob();
-      const url = window.URL.createObjectURL(blob);
-      setDownloadUrl(url);
+      const encodedFilename = response.headers.get('filename') || "relatorio.pdf";
+      const filename = decodeURIComponent(encodedFilename);
 
-      setAlert({
-        type: "success",
-        message: "O relatório foi gerado com sucesso!",
-      });
-    } catch (err: any) {
-      setAlert({
-        type: "error",
-        message: err.message || "Falha ao processar o arquivo.",
-      });
-    } finally {
-      setLoading(false);
-      setProgress(100);
-    }
-  };
+      // Captura o binário puro
+      const buffer = await response.arrayBuffer();
+      console.log("Buffer no Frontend (bytes):", buffer.byteLength);
+
+      // Cria o Blob garantindo o tipo MIME
+      const pdfBlob = new Blob([buffer], { type: 'application/pdf' });
+
+      const url = window.URL.createObjectURL(pdfBlob);
+      setDownloadData({ url, filename });
+      setIsProcessing(false);
+
+      return `Arquivo pronto: ${filename}`;
+    };
+
+    toast.promise(promise(), {
+      loading: 'Processando e gerando PDF...',
+      success: (msg) => msg,
+      error: 'Erro ao gerar PDF.',
+    });
+  }
 
   return (
-    <Card className="w-full max-w-md">
-      <CardContent className="space-y-4 p-6">
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Upload Excel */}
-          <div className="space-y-1">
-            <Label>Arquivo Excel (.xls ou .xlsx)</Label>
-            <Input
-              type="file"
-              accept=".xls,.xlsx,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-              onChange={(e) => setFile(e.target.files?.[0] || null)}
-            />
-          </div>
-
-          {/* Ano / Emissão */}
-          <div className="space-y-1">
-            <Label>Ano / Emissão</Label>
-            <Input
-              type="text"
-              placeholder="Ex: Dez/2025"
-              value={anoEmissao}
-              onChange={(e) => setAnoEmissao(e.target.value)}
-            />
-          </div>
-
-          <Button
-            disabled={!file || !anoEmissao || loading}
-            type="submit"
-            className="w-full"
-          >
-            {loading ? (
-              <>
-                <Loader2 className="animate-spin mr-2 h-4 w-4" />
-                Processando...
-              </>
-            ) : (
-              "Gerar Relatório"
+    <div className="space-y-4 max-w-md w-full">
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 border p-6 rounded-lg bg-card shadow-sm">
+          <FormField
+            control={form.control}
+            name="texto"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Mês/Ano de emissão</FormLabel>
+                <FormControl>
+                  <Input placeholder="Ex: Ago/2025" {...field} disabled={isProcessing} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
             )}
+          />
+
+          <FormField
+            control={form.control}
+            name="arquivo"
+            render={({ field: { onChange, onBlur, name, ref } }) => (
+              <FormItem>
+                <FormLabel>Arquivo Excel</FormLabel>
+                <FormControl>
+                  <Input
+                    type="file"
+                    accept=".xlsx, .xls"
+                    disabled={isProcessing}
+                    onChange={(e) => onChange(e.target.files)}
+                    onBlur={onBlur}
+                    name={name}
+                    ref={ref}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <Button type="submit" className="w-full" disabled={isProcessing}>
+            {isProcessing ? "Processando..." : "Enviar Dados"}
+            {!isProcessing && <FileUp className="ml-2 h-4 w-4" />}
           </Button>
-
-          {loading && <Progress value={progress} className="w-full" />}
         </form>
+      </Form>
 
-        {alert && (
-          <Alert
-            className={`border ${
-              alert.type === "success"
-                ? "border-green-500/40 bg-green-50 text-green-700"
-                : "border-red-500/40 bg-red-50 text-red-700"
-            }`}
-          >
-            {alert.type === "success" ? (
-              <CheckCircle2 className="h-4 w-4" />
-            ) : (
-              <XCircle className="h-4 w-4" />
-            )}
-            <AlertTitle>
-              {alert.type === "success" ? "Sucesso" : "Erro"}
-            </AlertTitle>
-            <AlertDescription>{alert.message}</AlertDescription>
-          </Alert>
-        )}
-
-        {downloadUrl && (
-          <div className="text-center mt-4">
-            <a
-              href={downloadUrl}
-              download="relatorio.pdf"
-              className="inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-            >
-              📄 Baixar relatorio
-            </a>
+      {downloadData && (
+        <div className="p-4 border-2 border-dashed border-primary/50 rounded-lg bg-primary/5 flex flex-col items-center gap-3 animate-in fade-in zoom-in-95">
+          <div className="text-center">
+            <p className="text-sm font-bold text-primary">Download Disponível</p>
+            <p className="text-xs text-muted-foreground truncate max-w-[250px]">{downloadData.filename}</p>
           </div>
-        )}
-      </CardContent>
-    </Card>
+          <Button asChild variant="default" className="w-full">
+            <a href={downloadData.url} download={downloadData.filename}>
+              <FileDown className="mr-2 h-4 w-4" />
+              Baixar Arquivo
+            </a>
+          </Button>
+        </div>
+      )}
+    </div>
   );
 }

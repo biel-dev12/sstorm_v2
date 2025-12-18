@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/app-sidebar"
 import { SidebarTrigger } from "@/components/ui/sidebar"
+import { Toaster } from "@/components/ui/sonner"
 // import { Separator } from "@/components/ui/separator"
 import "./globals.css";
 
@@ -48,6 +49,7 @@ export default function RootLayout({
             <main className="flex-1 overflow-y-auto p-6 bg-muted/10">
               {children}
             </main>
+            <Toaster richColors position="top-right" /> {/* richColors ativa cores para sucesso/erro */}
           </SidebarInset>
         </SidebarProvider>
       </body>
