@@ -2,9 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
     try {
-        console.log("URL:", process.env.N8N_RECEBE_ARQUIVO_URL);
-console.log("TOKEN:", process.env.N8N_INTERNAL_TOKEN);
-
         const formData = await req.formData();
         const n8nResponse = await fetch(
             process.env.N8N_RECEBE_ARQUIVO_URL!,
