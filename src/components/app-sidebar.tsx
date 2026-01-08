@@ -52,7 +52,7 @@ const data = {
   ],
   navMain: [
     {
-      title: "Documentos",
+      title: "AEP",
       url: "#",
       icon: FileCog,
       isActive: true,
@@ -60,6 +60,10 @@ const data = {
         {
           title: "Gerar Relatório Psicossocial",
           url: "/relatorio_psicossocial",
+        },
+        {
+          title: "E-mail de Acesso - SOC",
+          url: "/email_acesso_soc",
         },
       ],
     },
