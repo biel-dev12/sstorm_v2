@@ -22,11 +22,6 @@ import { Textarea } from "@/components/ui/textarea";
 const formSchema = z.object({
     nome: z.string().min(3, "Informe o nome"),
     cargo: z.string().min(2, "Informe o cargo"),
-    linkedin: z.string().url().optional().or(z.literal("")),
-    site: z.string().url().optional().or(z.literal("")),
-    assunto: z.string().min(3),
-    corpo: z.string().min(10),
-    cc: z.string().email(),
     destinatarios: z
         .string()
         .min(5, "Informe ao menos um destinatário"),
@@ -37,9 +32,6 @@ export function EnvioEmailForm() {
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
-        defaultValues: {
-            cc: "gestao@empresa.com",
-        },
     });
 
     async function onSubmit(values: z.infer<typeof formSchema>) {
@@ -48,21 +40,22 @@ export function EnvioEmailForm() {
         const destinatarios = values.destinatarios
             .split("\n")
             .map((linha) => {
-                const [email, link] = linha.split(";").map((s) => s.trim());
-                return { email, link };
+                const [email, empresa, link] = linha.split(";").map((s) => s.trim());
+                return { email, empresa, link };
             })
-            .filter((d) => d.email && d.link);
+            .filter((d) => d.email && d.empresa && d.link);
+
+        if (destinatarios.length === 0) {
+            toast.error("Nenhum destinatário válido encontrado.");
+            setIsSending(false);
+            return;
+        }
 
         const payload = {
-            from_name: values.nome,
-            cargo: values.cargo,
-            assinatura_links: {
-                linkedin: values.linkedin,
-                site: values.site,
+            remetente: {
+                nome: values.nome,
+                cargo: values.cargo,
             },
-            assunto: values.assunto,
-            corpo_html: values.corpo,
-            cc: [values.cc],
             destinatarios,
         };
 
@@ -72,7 +65,6 @@ export function EnvioEmailForm() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload),
             });
-
 
             if (!res.ok) throw new Error("Erro no envio");
             return "E-mails enviados com sucesso!";
@@ -124,92 +116,23 @@ export function EnvioEmailForm() {
                         />
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField
-                            control={form.control}
-                            name="linkedin"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>LinkedIn (opcional)</FormLabel>
-                                    <FormControl>
-                                        <Input {...field} disabled={isSending} />
-                                    </FormControl>
-                                </FormItem>
-                            )}
-                        />
-
-                        <FormField
-                            control={form.control}
-                            name="site"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Site (opcional)</FormLabel>
-                                    <FormControl>
-                                        <Input {...field} disabled={isSending} />
-                                    </FormControl>
-                                </FormItem>
-                            )}
-                        />
-                    </div>
-
-                    <FormField
-                        control={form.control}
-                        name="assunto"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Assunto</FormLabel>
-                                <FormControl>
-                                    <Input {...field} disabled={isSending} />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-
-                    <FormField
-                        control={form.control}
-                        name="corpo"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Corpo do e-mail (HTML simples)</FormLabel>
-                                <FormControl>
-                                    <Textarea rows={5} {...field} disabled={isSending} />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-
                     <FormField
                         control={form.control}
                         name="destinatarios"
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>
-                                    Destinatários (email;link — um por linha)
+                                    Destinatários (email;empresa;link — um por linha)
                                 </FormLabel>
                                 <FormControl>
                                     <Textarea
-                                        rows={5}
-                                        placeholder="cliente@email.com;https://link.com/abc"
+                                        rows={6}
+                                        placeholder="cliente@empresa.com;Empresa XYZ;https://link.com/abc"
                                         {...field}
                                         disabled={isSending}
                                     />
                                 </FormControl>
                                 <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-
-                    <FormField
-                        control={form.control}
-                        name="cc"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>CC (padrão)</FormLabel>
-                                <FormControl>
-                                    <Input {...field} disabled={isSending} />
-                                </FormControl>
                             </FormItem>
                         )}
                     />
@@ -224,7 +147,7 @@ export function EnvioEmailForm() {
             {!isSending && (
                 <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1">
                     <CheckCircle2 className="h-4 w-4 text-green-500" />
-                    Envio será feito com seu e-mail corporativo
+                    Assunto, corpo e CC são aplicados automaticamente
                 </p>
             )}
         </div>
