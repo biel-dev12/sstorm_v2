@@ -16,7 +16,7 @@ export default function HomePage() {
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-bold">
-        Bem-vindo 👋
+        Bem-vindo, {user.first_name}
       </h1>
 
       <div className="rounded-lg border p-4">

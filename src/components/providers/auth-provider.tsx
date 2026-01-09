@@ -6,6 +6,8 @@ type User = {
   id: string
   email: string
   cargo: string
+  first_name: string
+  last_name: string
 }
 
 type AuthContextType = {
