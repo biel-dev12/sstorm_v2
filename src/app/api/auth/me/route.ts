@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server"
 
+export const dynamic = "force-dynamic" // 👈 MUITO IMPORTANTE
+
 export async function GET(req: Request) {
   const cookie = req.headers.get("cookie")
   const session = cookie?.match(/session=([^;]+)/)?.[1]
@@ -9,16 +11,23 @@ export async function GET(req: Request) {
   }
 
   const res = await fetch(process.env.N8N_AUTH_ME!, {
-    method: "GET",
     headers: {
       "X-Session-Token": session,
       "X-Internal-Token": process.env.N8N_INTERNAL_TOKEN!,
     },
+    cache: "no-store",
   })
 
   if (!res.ok) {
     return NextResponse.json({ error: "Invalid session" }, { status: 401 })
   }
 
-  return NextResponse.json(await res.json())
+  const data = await res.json()
+  const user = Array.isArray(data) ? data[0] : data
+
+  if (!user) {
+    return NextResponse.json({ error: "Invalid session" }, { status: 401 })
+  }
+
+  return NextResponse.json({ user })
 }

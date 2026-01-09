@@ -24,7 +24,17 @@ export async function POST(req: Request) {
       )
     }
 
-    return NextResponse.json(data)
+    const response = NextResponse.json({ success: true })
+
+    response.cookies.set({
+      name: "session",
+      value: data.token,
+      httpOnly: true,
+      sameSite: "lax",
+      path: "/",
+    })
+
+    return response
   } catch (err) {
     console.error("LOGIN ERROR:", err)
     return NextResponse.json(

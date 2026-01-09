@@ -146,7 +146,7 @@ export default function RegisterPage() {
             )}
           />
 
-          <Button className="w-full" disabled={form.formState.isSubmitting}>
+          <Button className="w-full cursor-pointer" disabled={form.formState.isSubmitting}>
             {form.formState.isSubmitting ? "Criando..." : "Cadastrar"}
           </Button>
 
@@ -155,7 +155,7 @@ export default function RegisterPage() {
             <button
               type="button"
               onClick={() => router.push("/login")}
-              className="text-primary underline hover:opacity-80"
+              className="text-primary underline hover:opacity-80 cursor-pointer"
             >
               Faça Login
             </button>

@@ -18,6 +18,7 @@ import { NavMain } from "@/components/nav-main"
 import { NavProjects } from "@/components/nav-projects"
 import { NavUser } from "@/components/nav-user"
 import { TeamSwitcher } from "@/components/team-switcher"
+import { useAuth } from "@/components/providers/auth-provider"
 import {
   Sidebar,
   SidebarContent,
@@ -26,7 +27,6 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 
-// This is sample data.
 const data = {
   user: {
     name: "shadcn",
@@ -152,20 +152,36 @@ const data = {
   ],
 }
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
+  const { user, loading } = useAuth()
+
+  //  NÃO renderiza sidebar se não estiver logado
+  if (loading || !user) return null
+
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
         <TeamSwitcher teams={data.teams} />
       </SidebarHeader>
+
       <SidebarContent>
         <NavMain items={data.navMain} />
         <NavProjects projects={data.projects} />
       </SidebarContent>
+
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser
+          user={{
+            name: user.email,
+            email: user.email,
+            cargo: user.cargo,
+          }}
+        />
       </SidebarFooter>
+
       <SidebarRail />
     </Sidebar>
   )
 }
+
+
