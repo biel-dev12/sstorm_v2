@@ -27,7 +27,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const res = await fetch("/api/auth/me", {
         credentials: "include",
-        cache: "no-store", // 🔥 ESSENCIAL
+        cache: "no-store",
       })
 
       if (!res.ok) {
@@ -37,7 +37,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const data = await res.json()
 
-      // 🔥 AQUI ESTAVA O BUG
+  
       setUser(data.user)
     } finally {
       setLoading(false)
@@ -45,14 +45,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   async function logout() {
-    await fetch("/api/auth/logout", {
-      method: "POST",
-      credentials: "include",
-    })
+  await fetch("/api/auth/logout", {
+    method: "POST",
+    credentials: "include",
+  })
 
-    setUser(null)
-    window.location.href = "/login"
-  }
+  setUser(null)
+  window.location.href = "/login"
+}
+
 
   useEffect(() => {
     loadUser()
