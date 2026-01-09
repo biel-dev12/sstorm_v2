@@ -46,9 +46,7 @@ export default function LoginPage() {
     toast.promise(loginPromise(), {
       loading: "Entrando...",
       success: () => {
-        setTimeout(() => {
-          router.replace("/")
-        }, 500)
+        router.replace("/")
         return "Login realizado com sucesso!"
       },
       error: (err) => err.message || "Erro no login",
@@ -92,19 +90,19 @@ export default function LoginPage() {
         />
 
         <Button className="w-full cursor-pointer" disabled={form.formState.isSubmitting}>
-            {form.formState.isSubmitting ? "Entrando..." : "Entrar"}
-          </Button>
+          {form.formState.isSubmitting ? "Entrando..." : "Entrar"}
+        </Button>
 
         <div className="text-center text-sm text-muted-foreground">
-            Não tem uma conta?{" "}
-            <button
-              type="button"
-              onClick={() => router.push("/register")}
-              className="text-primary underline hover:opacity-80 cursor-pointer"
-            >
-              Cadastrar
-            </button>
-          </div>
+          Não tem uma conta?{" "}
+          <button
+            type="button"
+            onClick={() => router.push("/register")}
+            className="text-primary underline hover:opacity-80 cursor-pointer"
+          >
+            Cadastrar
+          </button>
+        </div>
       </form>
     </Form>
   )
