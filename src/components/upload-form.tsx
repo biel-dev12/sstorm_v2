@@ -111,7 +111,7 @@ export function UploadForm() {
             )}
           />
 
-          <Button type="submit" className="w-full" disabled={isProcessing}>
+          <Button type="submit" className="w-full cursor-pointer" disabled={isProcessing}>
             {isProcessing ? "Processando Massa..." : "Gerar PDFs"}
             {!isProcessing && <FileUp className="ml-2 h-4 w-4" />}
           </Button>

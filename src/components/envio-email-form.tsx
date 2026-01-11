@@ -16,26 +16,22 @@ import {
     FormLabel,
     FormMessage,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/components/providers/auth-provider";
 
-/* ------------------------------------------------------------------ */
-/* Schema */
-/* ------------------------------------------------------------------ */
 const formSchema = z.object({
     remetente_nome: z.string(),
+    remetente_sobrenome: z.string(),
     remetente_cargo: z.string(),
     destinatarios: z
         .string()
         .min(5, "Informe ao menos um destinatário"),
+    remetente_email: z.string(),
+        
 });
 
 type FormValues = z.infer<typeof formSchema>;
 
-/* ------------------------------------------------------------------ */
-/* Component */
-/* ------------------------------------------------------------------ */
 export function EnvioEmailForm() {
     const { user, loading } = useAuth();
     const [isSending, setIsSending] = useState(false);
@@ -44,18 +40,22 @@ export function EnvioEmailForm() {
         resolver: zodResolver(formSchema),
         defaultValues: {
             remetente_nome: "",
+            remetente_sobrenome: "",
             remetente_cargo: "",
             destinatarios: "",
+            remetente_email: "",
         },
     });
 
-    /* ---------------------------------------------------------------- */
-    /* Preenche dados do usuário (sem permitir edição) */
-    /* ---------------------------------------------------------------- */
-    useEffect(() => {
+        useEffect(() => {
         if (!user) return;
 
         form.setValue("remetente_nome", user.first_name, {
+            shouldDirty: false,
+            shouldTouch: false,
+        });
+
+        form.setValue("remetente_sobrenome", user.last_name, {
             shouldDirty: false,
             shouldTouch: false,
         });
@@ -64,11 +64,15 @@ export function EnvioEmailForm() {
             shouldDirty: false,
             shouldTouch: false,
         });
+
+        form.setValue("remetente_email", user.email, {
+            shouldDirty: false,
+            shouldTouch: false,
+        });
+
     }, [user, form]);
 
-    /* ---------------------------------------------------------------- */
-    /* Estados globais */
-    /* ---------------------------------------------------------------- */
+
     if (loading) {
         return <p>Carregando...</p>;
     }
@@ -77,9 +81,6 @@ export function EnvioEmailForm() {
         return <p>Não autenticado</p>;
     }
 
-    /* ---------------------------------------------------------------- */
-    /* Submit */
-    /* ---------------------------------------------------------------- */
     async function onSubmit(values: FormValues) {
         if (!user) {
             toast.error("Usuário não autenticado");
@@ -107,7 +108,9 @@ export function EnvioEmailForm() {
         const payload = {
             remetente: {
                 nome: user.first_name,
+                sobrenome: user.last_name,
                 cargo: user.cargo,
+                email: user.email,
             },
             destinatarios,
         };
@@ -135,9 +138,6 @@ export function EnvioEmailForm() {
         setIsSending(false);
     }
 
-    /* ---------------------------------------------------------------- */
-    /* Render */
-    /* ---------------------------------------------------------------- */
     return (
         <div className="max-w-2xl w-full">
             <Form {...form}>
@@ -146,48 +146,6 @@ export function EnvioEmailForm() {
                     autoComplete="off"
                     className="space-y-6 border p-6 rounded-lg bg-card shadow-sm"
                 >
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {/* Nome */}
-                        <FormField
-                            control={form.control}
-                            name="remetente_nome"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Nome</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            {...field}
-                                            readOnly
-                                            autoComplete="new-password"
-                                            className="bg-muted cursor-not-allowed"
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        {/* Cargo */}
-                        <FormField
-                            control={form.control}
-                            name="remetente_cargo"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Cargo</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            {...field}
-                                            readOnly
-                                            autoComplete="new-password"
-                                            className="bg-muted cursor-not-allowed"
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                    </div>
-
                     {/* Destinatários */}
                     <FormField
                         control={form.control}
@@ -212,7 +170,7 @@ export function EnvioEmailForm() {
 
                     <Button
                         type="submit"
-                        className="w-full"
+                        className="w-full cursor-pointer"
                         disabled={isSending}
                     >
                         {isSending ? "Enviando..." : "Enviar E-mails"}
@@ -224,7 +182,7 @@ export function EnvioEmailForm() {
             {!isSending && (
                 <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1">
                     <CheckCircle2 className="h-4 w-4 text-green-500" />
-                    Assunto, corpo e CC são aplicados automaticamente
+                    Importante: Assunto, corpo e CC são aplicados automaticamente
                 </p>
             )}
         </div>

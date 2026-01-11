@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 
-export const dynamic = "force-dynamic" // 👈 MUITO IMPORTANTE
+export const dynamic = "force-dynamic"
 
 export async function GET(req: Request) {
   const cookie = req.headers.get("cookie")
