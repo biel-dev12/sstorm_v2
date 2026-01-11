@@ -4,7 +4,7 @@ export async function POST(req: NextRequest) {
     try {
         const formData = await req.formData();
         const n8nResponse = await fetch(
-            process.env.N8N_RECEBE_ARQUIVO_URL!,
+            process.env.N8N_RECEBE_QUEST_URL!,
             {
                 method: "POST",
                 headers: {
@@ -33,6 +33,7 @@ export async function POST(req: NextRequest) {
             },
         });
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
         return NextResponse.json({ error: error.message }, { status: 500 });
     }

@@ -14,7 +14,7 @@ export async function POST(req: Request) {
     }
 
     const n8nResponse = await fetch(
-      process.env.N8N_ENVIO_EMAIL_URL!,
+      process.env.N8N_EMAIL_ACESSO_QUEST_URL!,
       {
         method: "POST",
         headers: {
